@@ -34,7 +34,10 @@ def baseline(
     state = ResearchState(request=request)
     llm = LLMClient()
     response = llm.complete(
-        system_prompt="You are a research assistant. Answer clearly and cite uncertainty when needed.",
+        system_prompt=(
+            "You are a research assistant. "
+            "Answer clearly and cite uncertainty when needed."
+        ),
         user_prompt=f"Research and answer this query:\n{query}",
     )
     state.final_answer = response.content
