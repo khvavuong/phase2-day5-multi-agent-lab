@@ -1,7 +1,7 @@
 """Supervisor / router skeleton."""
 
 from multi_agent_research_lab.agents.base import BaseAgent
-from multi_agent_research_lab.core.errors import StudentTodoError
+from multi_agent_research_lab.core.config import get_settings
 from multi_agent_research_lab.core.state import ResearchState
 
 
@@ -12,11 +12,24 @@ class SupervisorAgent(BaseAgent):
 
     def run(self, state: ResearchState) -> ResearchState:
         """Update `state.route_history` with the next route.
-
-        TODO(student): Implement routing policy. Suggested steps:
-        - Inspect request, current notes, and missing fields.
-        - Choose one of: researcher, analyst, writer, done.
-        - Enforce max iterations and failure fallback.
         """
+        settings = get_settings()
+        if state.iteration >= settings.max_iterations:
+            route = "done"
+        elif state.research_notes is None or len(state.sources) == 0:
+            route = "researcher"
+        elif state.analysis_notes is None:
+            route = "analyst"
+        elif state.final_answer is None:
+            route = "writer"
+        elif not any(result.agent.value == "critic" for result in state.agent_results):
+            route = "critic"
+        else:
+            route = "done"
 
-        raise StudentTodoError("TODO(student): implement SupervisorAgent.run")
+        if len(state.errors) >= 3 and route != "done":
+            route = "writer" if state.final_answer is None else "done"
+
+        state.record_route(route)
+        state.add_trace_event("supervisor.route", {"route": route, "iteration": state.iteration})
+        return state
