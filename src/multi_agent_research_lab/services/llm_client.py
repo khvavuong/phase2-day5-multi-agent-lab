@@ -8,7 +8,13 @@ from json import dumps, loads
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from tenacity import RetryError, retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import (
+    RetryError,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from multi_agent_research_lab.core.config import get_settings
 from multi_agent_research_lab.core.errors import AgentExecutionError
@@ -52,11 +58,15 @@ class LLMClient:
         except RetryError as exc:
             raise AgentExecutionError(f"LLM call failed after retries: {exc}") from exc
 
-        choices = data.get("choices", [])
+        choices_raw = data.get("choices", [])
+        choices = choices_raw if isinstance(choices_raw, list) else []
         content = ""
-        if choices:
-            content = str(choices[0].get("message", {}).get("content", "")).strip()
-        usage = data.get("usage", {})
+        if choices and isinstance(choices[0], dict):
+            message = choices[0].get("message")
+            if isinstance(message, dict):
+                content = str(message.get("content", "")).strip()
+        usage_raw = data.get("usage", {})
+        usage = usage_raw if isinstance(usage_raw, dict) else {}
         input_tokens = usage.get("prompt_tokens")
         output_tokens = usage.get("completion_tokens")
         return LLMResponse(
@@ -76,7 +86,12 @@ class LLMClient:
         wait=wait_exponential(multiplier=0.5, min=0.5, max=4),
         retry=retry_if_exception_type((URLError, HTTPError)),
     )
-    def _post_openai(self, api_key: str, payload: dict[str, object], timeout_seconds: int) -> dict[str, object]:
+    def _post_openai(
+        self,
+        api_key: str,
+        payload: dict[str, object],
+        timeout_seconds: int,
+    ) -> dict[str, object]:
         body = dumps(payload).encode("utf-8")
         request = Request(
             url="https://api.openai.com/v1/chat/completions",
