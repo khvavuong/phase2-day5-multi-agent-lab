@@ -18,7 +18,11 @@ class DummyWriter:
     def run(self, state: ResearchState) -> ResearchState:
         state.final_answer = "Final answer [1]"
         state.agent_results.append(
-            AgentResult(agent=AgentName.WRITER, content=state.final_answer, metadata={"cost_usd": 0.001})
+            AgentResult(
+                agent=AgentName.WRITER,
+                content=state.final_answer,
+                metadata={"cost_usd": 0.001},
+            )
         )
         return state
 
