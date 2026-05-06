@@ -2,7 +2,13 @@
 
 from time import perf_counter
 
-from multi_agent_research_lab.agents import AnalystAgent, CriticAgent, ResearcherAgent, SupervisorAgent, WriterAgent
+from multi_agent_research_lab.agents import (
+    AnalystAgent,
+    CriticAgent,
+    ResearcherAgent,
+    SupervisorAgent,
+    WriterAgent,
+)
 from multi_agent_research_lab.core.config import get_settings
 from multi_agent_research_lab.core.errors import AgentExecutionError
 from multi_agent_research_lab.core.state import ResearchState
@@ -15,8 +21,7 @@ class MultiAgentWorkflow:
     """
 
     def build(self) -> object:
-        """Create a LangGraph graph.
-        """
+        """Create a LangGraph graph."""
         return {
             "supervisor": SupervisorAgent(),
             "researcher": ResearcherAgent(),
@@ -26,8 +31,7 @@ class MultiAgentWorkflow:
         }
 
     def run(self, state: ResearchState) -> ResearchState:
-        """Execute the graph and return final state.
-        """
+        """Execute the graph and return final state."""
         settings = get_settings()
         nodes = self.build()
         if not isinstance(nodes, dict):
@@ -37,7 +41,10 @@ class MultiAgentWorkflow:
         while True:
             if perf_counter() - started > settings.timeout_seconds:
                 state.errors.append("Workflow timeout reached.")
-                state.add_trace_event("workflow.timeout", {"timeout_seconds": settings.timeout_seconds})
+                state.add_trace_event(
+                    "workflow.timeout",
+                    {"timeout_seconds": settings.timeout_seconds},
+                )
                 break
             if state.iteration >= settings.max_iterations:
                 state.add_trace_event("workflow.stop", {"reason": "max_iterations"})
