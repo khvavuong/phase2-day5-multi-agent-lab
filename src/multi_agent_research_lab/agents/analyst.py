@@ -16,17 +16,21 @@ class AnalystAgent(BaseAgent):
         self.llm_client = llm_client or LLMClient()
 
     def run(self, state: ResearchState) -> ResearchState:
-        """Populate `state.analysis_notes`.
-        """
+        """Populate `state.analysis_notes`."""
         with trace_span("agent.analyst") as span:
             prompt = (
                 "Convert research notes into structured analysis with sections:\n"
                 "1) Key claims\n2) Conflicting viewpoints\n3) Weak evidence / unknowns\n"
                 "Keep concise and actionable."
             )
+            user_prompt = (
+                f"Query: {state.request.query}\n\n"
+                f"Research notes:\n{state.research_notes or ''}\n\n"
+                f"{prompt}"
+            )
             response = self.llm_client.complete(
                 system_prompt="You are a rigorous research analyst.",
-                user_prompt=f"Query: {state.request.query}\n\nResearch notes:\n{state.research_notes or ''}\n\n{prompt}",
+                user_prompt=user_prompt,
             )
             state.analysis_notes = response.content
             span["attributes"]["input_tokens"] = response.input_tokens
