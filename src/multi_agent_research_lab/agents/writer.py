@@ -16,8 +16,7 @@ class WriterAgent(BaseAgent):
         self.llm_client = llm_client or LLMClient()
 
     def run(self, state: ResearchState) -> ResearchState:
-        """Populate `state.final_answer`.
-        """
+        """Populate `state.final_answer`."""
         with trace_span("agent.writer") as span:
             references = []
             for idx, source in enumerate(state.sources, start=1):
@@ -26,7 +25,10 @@ class WriterAgent(BaseAgent):
                     ref += f" - {source.url}"
                 references.append(ref)
             response = self.llm_client.complete(
-                system_prompt="You are a clear technical writer. Be accurate and cite sources by [index].",
+                system_prompt=(
+                    "You are a clear technical writer. "
+                    "Be accurate and cite sources by [index]."
+                ),
                 user_prompt=(
                     f"Query: {state.request.query}\nAudience: {state.request.audience}\n\n"
                     f"Research notes:\n{state.research_notes or ''}\n\n"
