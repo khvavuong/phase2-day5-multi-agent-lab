@@ -1,8 +1,8 @@
-# Lab 20: Multi-Agent Research System Starter
+# Lab 20: Multi-Agent Research System
 
-Starter repo cho bài lab **Multi-Agent Systems**: xây dựng hệ thống nghiên cứu gồm **Supervisor + Researcher + Analyst + Writer** và benchmark với single-agent baseline.
+Repo bài lab **Multi-Agent Systems**: hệ thống nghiên cứu gồm **Supervisor + Researcher + Analyst + Writer + Critic**, benchmark với single-agent baseline, và tracing qua LangSmith.
 
-> Mục tiêu của repo này là cung cấp **production-grade skeleton** để học viên phát triển code cá nhân. Các phần logic quan trọng được để ở dạng `TODO` để học viên tự triển khai.
+> Trạng thái hiện tại: đã implement end-to-end workflow, benchmark command, và report markdown.
 
 ## Learning outcomes
 
@@ -54,24 +54,27 @@ Trace + Benchmark Report
 
 ## Quickstart
 
-### 1. Tạo môi trường
+### 1. Tạo môi trường (Python 3.11)
 
 ```bash
-python -m venv .venv
+python3.11 -m venv .venv
 source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
-pip install -e "[dev]"
+python -m pip install --upgrade pip setuptools wheel
+python -m pip install -e ".[dev,llm]"
 cp .env.example .env
 ```
 
 ### 2. Cấu hình API keys
 
-Mở `.env` và điền key cần thiết.
+Mở `.env` và điền key cần thiết:
 
 ```bash
 OPENAI_API_KEY=...
-# optional
-LANGSMITH_API_KEY=...
 TAVILY_API_KEY=...
+LANGSMITH_TRACING=true
+LANGSMITH_ENDPOINT=https://api.smith.langchain.com
+LANGSMITH_API_KEY=...
+LANGSMITH_PROJECT=Lab-Assignment-Phase2
 ```
 
 ### 3. Chạy smoke test
@@ -81,34 +84,56 @@ make test
 python -m multi_agent_research_lab.cli --help
 ```
 
-### 4. Chạy baseline skeleton
+### 4. Chạy baseline
 
 ```bash
 python -m multi_agent_research_lab.cli baseline \
   --query "Research GraphRAG state-of-the-art and write a 500-word summary"
 ```
 
-Lệnh này chỉ chạy khung baseline tối giản. Học viên cần tự triển khai logic LLM thực tế trong `src/multi_agent_research_lab/services/llm_client.py`.
-
-### 5. Chạy multi-agent skeleton
+### 5. Chạy multi-agent
 
 ```bash
 python -m multi_agent_research_lab.cli multi-agent \
   --query "Research GraphRAG state-of-the-art and write a 500-word summary"
 ```
 
-Mặc định lệnh sẽ báo các `TODO` cần làm. Đây là chủ đích của starter repo.
+### 6. Chạy benchmark và sinh report
 
-## Milestones trong 2 giờ lab
+```bash
+python -m multi_agent_research_lab.cli benchmark
+```
 
-| Thời lượng | Milestone | File gợi ý |
-|---:|---|---|
-| 0-15' | Setup, chạy baseline skeleton | `cli.py`, `services/llm_client.py` |
-| 15-45' | Build Supervisor / router | `agents/supervisor.py`, `graph/workflow.py` |
-| 45-75' | Thêm Researcher, Analyst, Writer | `agents/*.py`, `core/state.py` |
-| 75-95' | Trace + benchmark single vs multi | `observability/tracing.py`, `evaluation/benchmark.py` |
-| 95-115' | Peer review theo rubric | `docs/peer_review_rubric.md` |
-| 115-120' | Exit ticket | `docs/lab_guide.md` |
+Hoặc custom query:
+
+```bash
+python -m multi_agent_research_lab.cli benchmark \
+  -q "Research GraphRAG state-of-the-art and write a 300-word summary" \
+  -q "Compare RAG and long-context models for enterprise QA" \
+  -q "List top failure modes of tool-using AI agents and mitigations" \
+  -o reports/benchmark_report.md
+```
+
+## Những phần đã làm
+
+- Implement `LLMClient.complete` (OpenAI API, timeout, retry, token/cost capture).
+- Implement `SearchClient.search` (Tavily API, retry, source mapping).
+- Implement agents: `Supervisor`, `Researcher`, `Analyst`, `Writer`, `Critic`.
+- Implement workflow run loop với guardrails (`max_iterations`, timeout, fallback khi lỗi).
+- Tích hợp tracing local + LangSmith trong `observability/tracing.py`.
+- Thêm benchmark command và markdown report renderer.
+- Cập nhật tests để phản ánh behavior mới.
+
+## Milestones lab (tham chiếu)
+
+| Thời lượng | Milestone                         | File gợi ý                                            |
+| ---------: | --------------------------------- | ----------------------------------------------------- |
+|      0-15' | Setup, chạy baseline skeleton     | `cli.py`, `services/llm_client.py`                    |
+|     15-45' | Build Supervisor / router         | `agents/supervisor.py`, `graph/workflow.py`           |
+|     45-75' | Thêm Researcher, Analyst, Writer  | `agents/*.py`, `core/state.py`                        |
+|     75-95' | Trace + benchmark single vs multi | `observability/tracing.py`, `evaluation/benchmark.py` |
+|    95-115' | Peer review theo rubric           | `docs/peer_review_rubric.md`                          |
+|   115-120' | Exit ticket                       | `docs/lab_guide.md`                                   |
 
 ## Quy ước production trong repo
 
@@ -120,7 +145,7 @@ Mặc định lệnh sẽ báo các `TODO` cần làm. Đây là chủ đích c�
 - Không để agent chạy vô hạn: dùng `max_iterations`, `timeout_seconds`.
 - Có benchmark report thay vì chỉ demo output đẹp.
 
-## TODO chính cho học viên
+## TODO chính cho học viên (để tự rà soát)
 
 Tìm trong code các marker:
 
@@ -128,15 +153,15 @@ Tìm trong code các marker:
 grep -R "TODO(student)" -n src tests docs
 ```
 
-Các phần học viên cần tự làm:
+Các phần cốt lõi đã được implement trong repo hiện tại:
 
-1. Implement LLM client.
-2. Implement web/search client hoặc mock search source.
-3. Implement routing decision trong Supervisor.
-4. Implement từng worker agent.
-5. Build LangGraph workflow.
-6. Thêm tracing provider thật: LangSmith, Langfuse hoặc OpenTelemetry.
-7. Viết benchmark report.
+1. LLM client.
+2. Web/search client.
+3. Routing decision trong Supervisor.
+4. Worker agents.
+5. Workflow orchestration.
+6. LangSmith tracing hooks.
+7. Benchmark report generation.
 
 ## Deliverables
 
@@ -144,8 +169,9 @@ Học viên nộp:
 
 1. GitHub repo cá nhân.
 2. Screenshot trace hoặc link trace.
-3. `reports/benchmark_report.md` so sánh single vs multi-agent.
-4. Một đoạn giải thích failure mode và cách fix.
+3. Report benchmark: `reports/benchmark_report.md` (so sánh single vs multi-agent).
+4. Design note: `docs/design_template.md`.
+5. Failure mode và cách fix: trong phần `Failure Analysis` của `reports/benchmark_report.md`.
 
 ## References
 
