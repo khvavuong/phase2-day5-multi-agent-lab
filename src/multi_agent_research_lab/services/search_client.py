@@ -4,7 +4,13 @@ from json import dumps, loads
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from tenacity import RetryError, retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import (
+    RetryError,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from multi_agent_research_lab.core.config import get_settings
 from multi_agent_research_lab.core.errors import AgentExecutionError
@@ -49,7 +55,14 @@ class SearchClient:
             score = item.get("score")
             metadata = {"score": score} if isinstance(score, (int, float)) else {}
             if snippet:
-                results.append(SourceDocument(title=title, url=url_value, snippet=snippet, metadata=metadata))
+                results.append(
+                    SourceDocument(
+                        title=title,
+                        url=url_value,
+                        snippet=snippet,
+                        metadata=metadata,
+                    )
+                )
         return results
 
     @retry(
