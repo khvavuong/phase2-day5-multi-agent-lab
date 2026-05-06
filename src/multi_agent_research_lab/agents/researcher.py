@@ -16,10 +16,13 @@ class ResearcherAgent(BaseAgent):
         self.search_client = search_client or SearchClient()
 
     def run(self, state: ResearchState) -> ResearchState:
-        """Populate `state.sources` and `state.research_notes`.
-        """
-        with trace_span("agent.researcher", {"query": state.request.query, "max_sources": state.request.max_sources}) as span:
-            docs = self.search_client.search(state.request.query, max_results=state.request.max_sources)
+        """Populate `state.sources` and `state.research_notes`."""
+        attributes = {"query": state.request.query, "max_sources": state.request.max_sources}
+        with trace_span("agent.researcher", attributes) as span:
+            docs = self.search_client.search(
+                state.request.query,
+                max_results=state.request.max_sources,
+            )
             state.sources = docs
             note_lines = []
             for idx, doc in enumerate(docs, start=1):
@@ -28,7 +31,9 @@ class ResearcherAgent(BaseAgent):
                     source_line += f" ({doc.url})"
                 source_line += f": {doc.snippet}"
                 note_lines.append(source_line)
-            state.research_notes = "\n".join(note_lines) if note_lines else "No reliable sources found."
+            state.research_notes = (
+                "\n".join(note_lines) if note_lines else "No reliable sources found."
+            )
             span["attributes"]["source_count"] = len(docs)
             state.add_trace_event("agent.researcher", span)
             state.agent_results.append(
