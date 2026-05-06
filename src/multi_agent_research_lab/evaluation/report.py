@@ -17,7 +17,9 @@ def render_markdown_report(metrics: list[BenchmarkMetrics]) -> str:
         quality = "" if item.quality_score is None else f"{item.quality_score:.1f}"
         coverage = "" if item.citation_coverage is None else f"{item.citation_coverage:.2f}"
         failure = "" if item.failure_rate is None else f"{item.failure_rate:.2f}"
-        lines.append(
-            f"| {item.run_name} | {item.latency_seconds:.2f} | {cost} | {quality} | {coverage} | {failure} | {item.notes} |"
+        row = (
+            f"| {item.run_name} | {item.latency_seconds:.2f} | {cost} | "
+            f"{quality} | {coverage} | {failure} | {item.notes} |"
         )
+        lines.append(row)
     return "\n".join(lines) + "\n"
